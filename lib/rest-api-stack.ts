@@ -49,6 +49,7 @@ export class RestAPIStack extends cdk.Stack {
         memorySize: 128,
         environment: {
           TABLE_NAME: moviesTable.tableName,
+          CAST_TABLE_NAME: movieCastsTable.tableName,
           REGION: 'eu-west-1',
         },
       }
@@ -133,13 +134,14 @@ export class RestAPIStack extends cdk.Stack {
         
 
 
-        // Permissions 
-        moviesTable.grantReadData(getMovieByIdFn)
-        moviesTable.grantReadData(getAllMoviesFn)
+        // Permissions - Full Access to manage easily
+        moviesTable.grantFullAccess(getMovieByIdFn)
+        moviesTable.grantFullAccess(getAllMoviesFn)
         moviesTable.grantReadWriteData(newMovieFn)
         moviesTable.grantFullAccess(deleteMovieByIdFn)
-        movieCastsTable.grantReadData(getMovieCastMembersFn);
 
+        movieCastsTable.grantReadData(getMovieCastMembersFn);
+        movieCastsTable.grantReadData(getMovieByIdFn);
 
 
         // REST API 
