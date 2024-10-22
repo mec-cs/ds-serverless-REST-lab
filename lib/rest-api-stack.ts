@@ -67,6 +67,23 @@ export class RestAPIStack extends cdk.Stack {
           },
         });
 
+        const deleteMovieByIdFn = new lambdanode.NodejsFunction(
+          this,
+          "DeleteMovieByIdFn",
+          {
+            architecture: lambda.Architecture.ARM_64,
+            runtime: lambda.Runtime.NODEJS_18_X,
+            entry: `${__dirname}/../lambdas/deleteMovieById.ts`,
+            timeout: cdk.Duration.seconds(10),
+            memorySize: 128,
+            environment: {
+              TABLE_NAME: moviesTable.tableName,
+              REGION: 'eu-west-1',
+            },
+          }
+        );
+
+
         new custom.AwsCustomResource(this, "moviesddbInitData", {
           onCreate: {
             service: "DynamoDB",
@@ -87,7 +104,8 @@ export class RestAPIStack extends cdk.Stack {
         moviesTable.grantReadData(getMovieByIdFn)
         moviesTable.grantReadData(getAllMoviesFn)
         moviesTable.grantReadWriteData(newMovieFn)
-        
+        moviesTable.grantFullAccess(deleteMovieByIdFn)
+
         // REST API 
         const api = new apig.RestApi(this, "RestAPI", {
           description: "demo api",
@@ -102,23 +120,40 @@ export class RestAPIStack extends cdk.Stack {
           },
         });
 
+
+        // ENDPOINTS
+
+        // movies url endpoint
         const moviesEndpoint = api.root.addResource("movies");
-          moviesEndpoint.addMethod(
+          
+        // get all endp
+        moviesEndpoint.addMethod(
           "GET",
           new apig.LambdaIntegration(getAllMoviesFn, { proxy: true })
         );
 
-        const movieEndpoint = moviesEndpoint.addResource("{movieId}");
-          movieEndpoint.addMethod(
-          "GET",
-          new apig.LambdaIntegration(getMovieByIdFn, { proxy: true })
-        );
-        
-        // new post method
+        // new post endp
         moviesEndpoint.addMethod(
           "POST",
           new apig.LambdaIntegration(newMovieFn, { proxy: true })
         );
+
+
+        // movieId url endpoint
+        const movieEndpoint = moviesEndpoint.addResource("{movieId}");
+    
+        // get by id endp
+        movieEndpoint.addMethod(
+          "GET",
+          new apig.LambdaIntegration(getMovieByIdFn, { proxy: true })
+        );
+
+        // delete by id endp
+        movieEndpoint.addMethod(
+            "DELETE",
+            new apig.LambdaIntegration(deleteMovieByIdFn, { proxy: true})
+        );
+
       }
     }
     

@@ -27,6 +27,7 @@ export const handler: APIGatewayProxyHandlerV2 = async (event, context) => {    
         Key: { id: movieId },
       })
     );
+    
     console.log("GetCommand response: ", commandOutput);
     if (!commandOutput.Item) {
       return {
